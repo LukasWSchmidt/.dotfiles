@@ -1,0 +1,165 @@
+source "%val{config}/plugins/plug.kak/rc/plug.kak"
+plug "andreyorst/plug.kak" noload
+
+# themes
+plug "secondary-smiles/kakoune-themes" theme config %{
+  colorscheme one-dark
+}
+
+# Change clippy to cat!
+set-option global ui_options terminal_assistant=cat
+
+## highlighting
+# display line numbers
+add-highlighter global/ number-lines -hlcursor -relative -separator "  " -cursor-separator " |"
+# show matching symbols
+add-highlighter global/ show-matching
+
+set-option global tabstop 2
+set-option global indentwidth 2
+
+# exit insert mode with jj 
+hook global InsertChar j %{ try %{
+  exec -draft hH <a-k>jj<ret> d
+  exec <esc>
+}}
+# exit insert mode with kk 
+hook global InsertChar k %{ try %{
+  exec -draft hH <a-k>kk<ret> d
+  exec <esc>
+}}
+
+# always keep eight lines and three columns displayed around the cursor
+set-option global scrolloff 8,3
+
+# remap b to q
+map global normal q b
+# variations of b
+map global normal Q B
+map global normal <a-q> <a-b>
+map global normal <a-Q> <a-B>
+
+# unselect on <esc>
+# map global normal <esc> ";,"
+
+# comment lines
+map global normal <c-v> ":comment-line<ret>"
+
+map -docstring "close current buffer" global user b ": db<ret>"
+map -docstring "goto previous buffer" global user n ": bp<ret>"
+map -docstring "goto next buffer" global user m ": bn<ret>"
+
+# autopairs
+plug "alexherbo2/auto-pairs.kak" config %{
+  enable-auto-pairs
+}
+
+plug "raiguard/kak-harpoon" config %{
+  map global user 1 ":harpoon-nav 1<ret>" -docstring "Harpoon file 1"
+  map global user 2 ":harpoon-nav 2<ret>" -docstring "Harpoon file 2"
+  map global user 3 ":harpoon-nav 3<ret>" -docstring "Harpoon file 3"
+  map global user 4 ":harpoon-nav 4<ret>" -docstring "Harpoon file 4"
+  map global user 5 ":harpoon-nav 5<ret>" -docstring "Harpoon file 5"
+  map global user 6 ":harpoon-nav 6<ret>" -docstring "Harpoon file 6"
+  map global user 7 ":harpoon-nav 7<ret>" -docstring "Harpoon file 7"
+  map global user 8 ":harpoon-nav 8<ret>" -docstring "Harpoon file 8"
+  map global user 9 ":harpoon-nav 9<ret>" -docstring "Harpoon file 9"
+
+  map global user a ":harpoon-add<ret>" -docstring "add harpoon"
+  map global user h ":harpoon-show-list<ret>" -docstring "show harpoons"
+}
+
+map global goto "b" '<esc>:prompt -buffer-completion buffer: %{ buffer %val{text} }<ret>' -docstring "buffer"
+
+plug 'delapouite/kakoune-buffers' %{
+  map global normal ^ q
+  map global normal <a-^> Q
+  map global normal q b
+  map global normal Q B
+  map global normal <a-q> <a-b>
+  map global normal <a-Q> <a-B>
+  map global normal b ': enter-buffers-mode<ret>' -docstring 'buffers'
+  map global normal B ': enter-user-mode -lock buffers<ret>' -docstring 'buffers (lock)'
+}
+
+# fzf
+plug "andreyorst/fzf.kak" config %{
+  require-module fzf
+  require-module fzf-grep
+  require-module fzf-file
+} defer fzf %{
+  set-option global fzf_highlight_command "lat -r {}"
+} defer fzf-file %{
+  set-option global fzf_file_command "fd . --no-ignore-vcs"
+} defer fzf-grep %{
+  set-option global fzf_grep_command "fd"
+}
+
+map -docstring "open fzf" global user f ": fzf-mode<ret>"
+
+plug "evanrelf/byline.kak" config %{
+  require-module "byline"
+}
+
+plug "kak-lsp/kak-lsp" do %{
+  cargo install --locked --force --path .
+  # optional: if you want to use specific language servers
+  # mkdir -p ~/.config/kak-lsp
+  # cp -n kak-lsp.toml ~/.config/kak-lsp/
+}
+
+hook global WinSetOption filetype=(rust|c) %{
+  lsp-enable-window
+  lsp-inlay-diagnostics-enable global
+}
+
+## enable syntax highlighting for each lang
+# c
+hook global WinSetOption filetype=c %{
+  hook window -group semantic-tokens BufReload .* lsp-semantic-tokens
+  hook window -group semantic-tokens NormalIdle .* lsp-semantic-tokens
+  hook window -group semantic-tokens InsertIdle .* lsp-semantic-tokens
+  hook -once -always window WinSetOption filetype=.* %{
+    remove-hooks window semantic-tokens
+  }
+}
+
+# rust
+hook global WinSetOption filetype=rust %{
+  hook window -group semantic-tokens BufReload .* lsp-semantic-tokens
+  hook window -group semantic-tokens NormalIdle .* lsp-semantic-tokens
+  hook window -group semantic-tokens InsertIdle .* lsp-semantic-tokens
+  hook -once -always window WinSetOption filetype=.* %{
+    remove-hooks window semantic-tokens
+  }
+}
+
+# tab to move in autocomplete
+hook global InsertCompletionShow .* %{
+    try %{
+        # this command temporarily removes cursors preceded by whitespace;
+        # if there are no cursors left, it raises an error, does not
+        # continue to execute the mapping commands, and the error is eaten
+        # by the `try` command so no warning appears.
+        execute-keys -draft 'h<a-K>\h<ret>'
+        map window insert <tab> <c-n>
+        map window insert <s-tab> <c-p>
+        hook -once -always window InsertCompletionHide .* %{
+            unmap window insert <tab> <c-n>
+            unmap window insert <s-tab> <c-p>
+        }
+    }
+}
+
+plug "gustavo-hms/luar" %{
+    plug "gustavo-hms/peneira" %{
+        require-module peneira
+    }
+}
+
+plug "https://codeberg.org/mbauhardt/peneira-filters" config %{
+    map global normal <c-p> ': peneira-filters-mode<ret>'
+}
+set-option global luar_interpreter luajit
+
+ 
