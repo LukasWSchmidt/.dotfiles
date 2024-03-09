@@ -3,7 +3,14 @@ plug "andreyorst/plug.kak" noload
 
 # themes
 plug "secondary-smiles/kakoune-themes" theme config %{
-  colorscheme one-dark
+  colorscheme ef-duo-dark
+}
+
+# Latex Support
+plug "ul/kak-lsp" do %{
+  cargo install --locked --force --path .
+} config %{
+  hook global WinSetOption filetype=latex lsp-enable-window
 }
 
 # Change clippy to cat!
@@ -18,7 +25,18 @@ add-highlighter global/ show-matching
 set-option global tabstop 2
 set-option global indentwidth 2
 
-# exit insert mode with jj 
+#Clipboard hack
+hook global RegisterModified '"' %{ nop %sh{
+  printf %s "$kak_main_reg_dquote" | pbcopy
+}}
+
+#Paste Clipboard hack
+	#Paste Before
+map global user P '!pbpaste<ret>'
+	#Paste After
+map global user p '<a-!>pbpaste<ret>'
+
+  # exit insert mode with jj 
 hook global InsertChar j %{ try %{
   exec -draft hH <a-k>jj<ret> d
   exec <esc>
