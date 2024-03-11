@@ -93,8 +93,6 @@ cask "font-monocraft"
 cask "font-sf-pro"
 # GPU-based terminal emulator
 cask "kitty"
-# Text editor
-cask "macvim"
 # Smooths scrolling and set mouse scroll directions independently
 cask "mos"
 # Open-source software for live streaming and screen recording
