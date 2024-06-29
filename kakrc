@@ -3,14 +3,8 @@ plug "andreyorst/plug.kak" noload
 
 # themes
 plug "secondary-smiles/kakoune-themes" theme config %{
-  colorscheme ef-duo-dark
-}
-
-# Latex Support
-plug "ul/kak-lsp" do %{
-  cargo install --locked --force --path .
-} config %{
-  hook global WinSetOption filetype=latex lsp-enable-window
+  colorscheme ef-frost
+  # colorscheme ef-maris-dark
 }
 
 # Change clippy to cat!
@@ -30,11 +24,20 @@ hook global RegisterModified '"' %{ nop %sh{
   printf %s "$kak_main_reg_dquote" | pbcopy
 }}
 
-#Paste Clipboard hack
+#Map space i to alt i
+map -docstring "select menu" global user i <a-i>
+
+# space c to line comment
+map -docstring "comment lines" global user c ":comment-line<ret>"
+
+#commet with control /
+# map global normal <c-/> "comment-line<ret>" 
+
 	#Paste Before
-map global user P '!pbpaste<ret>'
+# map global user P '!pbpaste<ret>'
 	#Paste After
-map global user p '<a-!>pbpaste<ret>'
+# map global user p '<a-!>pbpaste<ret>'
+  #Paste Clipboard hack
 
   # exit insert mode with jj 
 hook global InsertChar j %{ try %{
@@ -63,7 +66,13 @@ map global normal <a-Q> <a-B>
 # comment lines
 map global normal <c-v> ":comment-line<ret>"
 
-map -docstring "close current buffer" global user b ": db<ret>"
+# map l in user menu to select each line in selection
+map -docstring "select each line" global user l <a-s>
+
+# register access with space r
+map -docstring "reg access" global user r <c-r>
+
+# map -docstring "close current buffer" global user b ": db<ret>"
 map -docstring "goto previous buffer" global user n ": bp<ret>"
 map -docstring "goto next buffer" global user m ": bn<ret>"
 
@@ -76,12 +85,12 @@ plug "raiguard/kak-harpoon" config %{
   map global user 1 ":harpoon-nav 1<ret>" -docstring "Harpoon file 1"
   map global user 2 ":harpoon-nav 2<ret>" -docstring "Harpoon file 2"
   map global user 3 ":harpoon-nav 3<ret>" -docstring "Harpoon file 3"
-  map global user 4 ":harpoon-nav 4<ret>" -docstring "Harpoon file 4"
-  map global user 5 ":harpoon-nav 5<ret>" -docstring "Harpoon file 5"
-  map global user 6 ":harpoon-nav 6<ret>" -docstring "Harpoon file 6"
-  map global user 7 ":harpoon-nav 7<ret>" -docstring "Harpoon file 7"
-  map global user 8 ":harpoon-nav 8<ret>" -docstring "Harpoon file 8"
-  map global user 9 ":harpoon-nav 9<ret>" -docstring "Harpoon file 9"
+  map global user 4 ":harpoon-nav 4<ret>" 
+  map global user 5 ":harpoon-nav 5<ret>" 
+  map global user 6 ":harpoon-nav 6<ret>" 
+  map global user 7 ":harpoon-nav 7<ret>" 
+  map global user 8 ":harpoon-nav 8<ret>" 
+  map global user 9 ":harpoon-nav 9<ret>" 
 
   map global user a ":harpoon-add<ret>" -docstring "add harpoon"
   map global user h ":harpoon-show-list<ret>" -docstring "show harpoons"
@@ -106,7 +115,8 @@ plug "andreyorst/fzf.kak" config %{
   require-module fzf-grep
   require-module fzf-file
 } defer fzf %{
-  set-option global fzf_highlight_command "lat -r {}"
+  # set-option global fzf_highlight_command "bat -r {}"
+  set-option global fzf_highlight_command "bat -n --color=always --line-range :500 {}"
 } defer fzf-file %{
   set-option global fzf_file_command "fd . --no-ignore-vcs"
 } defer fzf-grep %{
@@ -118,6 +128,9 @@ map -docstring "open fzf" global user f ": fzf-mode<ret>"
 plug "evanrelf/byline.kak" config %{
   require-module "byline"
 }
+
+# eval %sh{kak-lsp --kakoune -s $kak_session}
+#   lsp-enable
 
 plug "kak-lsp/kak-lsp" do %{
   cargo install --locked --force --path .
@@ -169,15 +182,15 @@ hook global InsertCompletionShow .* %{
     }
 }
 
-plug "gustavo-hms/luar" %{
-    plug "gustavo-hms/peneira" %{
-        require-module peneira
-    }
+# Switch cursor color in insert mode
+set-face global InsertCursor default,green+B
+
+hook global ModeChange .*:.*:insert %{
+    set-face window PrimaryCursor InsertCursor
+    set-face window PrimaryCursorEol InsertCursor
 }
 
-plug "https://codeberg.org/mbauhardt/peneira-filters" config %{
-    map global normal <c-p> ': peneira-filters-mode<ret>'
-}
-set-option global luar_interpreter luajit
-
- 
+hook global ModeChange .*:insert:.* %{ try %{
+    unset-face window PrimaryCursor
+    unset-face window PrimaryCursorEol
+} }
